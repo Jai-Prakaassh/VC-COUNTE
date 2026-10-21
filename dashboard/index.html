@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord VC Counter • Real-Time Voice Dashboard</title>
+    <meta name="description" content="Live Discord voice channel counter, member statistics, and real-time dashboard powered by WebSockets.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" x2="12" y1="19" y2="22"></line>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">VC COUNTER</span>
+                    <span class="live-pill"><span class="pulse-dot"></span> LIVE DASHBOARD</span>
+                </div>
+            </div>
+
+            <!-- Server Selector -->
+            <div class="server-selector-container">
+                <label for="serverSelect" class="sr-only">Select Server</label>
+                <div class="select-wrapper">
+                    <img id="selectedServerIcon" class="server-avatar hidden" src="" alt="Server Icon">
+                    <select id="serverSelect" class="server-dropdown">
+                        <option value="" disabled selected>Loading servers...</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Navbar Right Actions -->
+            <div class="nav-actions">
+                <!-- WebSocket Connection Status Pill -->
+                <div id="connectionStatus" class="status-pill status-connecting" title="WebSocket Status">
+                    <span class="status-dot"></span>
+                    <span id="connectionText" class="status-text">Connecting...</span>
+                </div>
+
+                <!-- Refresh Button -->
+                <button id="refreshBtn" class="btn btn-secondary btn-icon" title="Force Refresh">
+                    <svg id="refreshIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+                    </svg>
+                    <span class="btn-text">Refresh</span>
+                </button>
+
+                <!-- Admin Auth Modal Trigger -->
+                <button id="authModalBtn" class="btn btn-primary" title="Admin Authentication">
+                    <svg id="authIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <span id="authBtnLabel">Admin Login</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="dashboard-main">
+        <!-- Toast Notification Area -->
+        <div id="toastContainer" class="toast-container"></div>
+
+        <!-- Private Server Locked State (Hidden by default) -->
+        <section id="privateLockBanner" class="locked-banner hidden">
+            <div class="locked-content">
+                <div class="locked-icon">🔒</div>
+                <h2>Private Dashboard</h2>
+                <p>This Discord server's voice statistics are restricted by the server administrator. Please authenticate with the administrator secret key to view live channels.</p>
+                <button id="unlockBtn" class="btn btn-primary">Enter Admin Secret</button>
+            </div>
+        </section>
+
+        <!-- Metrics Overview Grid -->
+        <section id="metricsSection" class="metrics-grid">
+            <!-- 1. Total Members Card -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">TOTAL MEMBERS</span>
+                    <div class="metric-icon-badge badge-blue">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="metric-value-container">
+                    <span id="statTotalMembers" class="metric-number">--</span>
+                </div>
+                <div class="metric-subtext">
+                    <span class="sub-pill"><span id="statHumanMembers">0</span> Humans</span>
+                    <span class="sub-pill"><span id="statBotMembers">0</span> Bots</span>
+                </div>
+            </div>
+
+            <!-- 2. Members in Voice Card -->
+            <div class="metric-card metric-card-highlight">
+                <div class="metric-header">
+                    <span class="metric-title">MEMBERS IN VOICE</span>
+                    <div class="metric-icon-badge badge-green">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="metric-value-container">
+                    <span class="live-dot-pulse"></span>
+                    <span id="statInVoice" class="metric-number highlight-number">--</span>
+                </div>
+                <div class="metric-subtext">
+                    <span class="sub-pill sub-pill-green"><span id="statInVoiceHumans">0</span> Humans</span>
+                    <span class="sub-pill"><span id="statInVoiceBots">0</span> Bots</span>
+                </div>
+            </div>
+
+            <!-- 3. Active Voice Channels Card -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">ACTIVE CHANNELS</span>
+                    <div class="metric-icon-badge badge-purple">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 10v3"></path>
+                            <path d="M6 6v11"></path>
+                            <path d="M10 3v18"></path>
+                            <path d="M14 8v7"></path>
+                            <path d="M18 5v13"></path>
+                            <path d="M22 10v3"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="metric-value-container">
+                    <span id="statActiveVC" class="metric-number">--</span>
+                </div>
+                <div class="metric-subtext">
+                    <span class="sub-pill"><span id="statActivePercent">0%</span> of all audio channels</span>
+                </div>
+            </div>
+
+            <!-- 4. Total Voice & Stage Channels Card -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <span class="metric-title">TOTAL AUDIO CHANNELS</span>
+                    <div class="metric-icon-badge badge-cyan">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                            <circle cx="12" cy="14" r="4"></circle>
+                            <line x1="12" y1="6" x2="12.01" y2="6"></line>
+                        </svg>
+                    </div>
+                </div>
+                <div class="metric-value-container">
+                    <span id="statTotalAudio" class="metric-number">--</span>
+                </div>
+                <div class="metric-subtext">
+                    <span class="sub-pill"><span id="statTotalVoice">0</span> Standard VC</span>
+                    <span class="sub-pill"><span id="statTotalStage">0</span> Stage</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Secondary Controls Bar: Search, Filters, Sorters -->
+        <section class="controls-bar">
+            <!-- Search Input -->
+            <div class="search-box">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="channelSearchInput" placeholder="Search channels or occupants..." autocomplete="off">
+                <button id="clearSearchBtn" class="clear-btn hidden" title="Clear Search">&times;</button>
+            </div>
+
+            <!-- Filter Mode Buttons -->
+            <div class="filter-group">
+                <button class="filter-chip active" data-filter="all">All Channels</button>
+                <button class="filter-chip" data-filter="active_only">Active Only (<span id="activeChannelsCountPill">0</span>)</button>
+                <button class="filter-chip" data-filter="empty_only">Empty Only</button>
+            </div>
+
+            <!-- Sorter Dropdown -->
+            <div class="sort-group">
+                <label for="sortBySelect" class="control-label">Sort:</label>
+                <select id="sortBySelect" class="custom-select">
+                    <option value="occupants_desc">Occupants (High to Low)</option>
+                    <option value="occupants_asc">Occupants (Low to High)</option>
+                    <option value="name_asc">Name (A — Z)</option>
+                    <option value="name_desc">Name (Z — A)</option>
+                </select>
+            </div>
+
+            <!-- Last Updated Indicator -->
+            <div class="last-sync-indicator">
+                <span class="sync-label">Last sync:</span>
+                <span id="lastUpdatedTimestamp" class="sync-time">Just now</span>
+            </div>
+        </section>
+
+        <!-- Content Layout: Main Channels Grid & Activity Sidebar -->
+        <div class="dashboard-layout">
+            <!-- Left Main Column: Voice Channels List -->
+            <section class="channels-column">
+                <div class="section-heading">
+                    <h2 class="section-title">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                        Voice Channels
+                        <span id="channelsCountBadge" class="count-badge">0</span>
+                    </h2>
+                </div>
+
+                <!-- Channels Container -->
+                <div id="channelsContainer" class="channels-grid">
+                    <!-- Dynamic Voice Channel Cards injected by app.js -->
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <p>Synchronizing voice states with Discord Gateway...</p>
+                    </div>
+                </div>
+
+                <!-- Empty State for Search -->
+                <div id="noChannelsFound" class="empty-state hidden">
+                    <div class="empty-icon">🔍</div>
+                    <h3>No Channels Found</h3>
+                    <p>No voice channels match your search filter.</p>
+                </div>
+            </section>
+
+            <!-- Right Sidebar: Live Activity Feed & Leaderboard -->
+            <aside class="sidebar-column">
+                <!-- Tab Headers -->
+                <div class="sidebar-tabs">
+                    <button class="tab-btn active" data-tab="activityTab">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                        Live Activity
+                    </button>
+                    <button class="tab-btn" data-tab="leaderboardTab">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="8" r="7"></circle>
+                            <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                        </svg>
+                        Leaderboard
+                    </button>
+                </div>
+
+                <!-- Tab 1: Live Activity Feed -->
+                <div id="activityTab" class="tab-pane active">
+                    <div class="feed-header">
+                        <span class="feed-title">Real-Time Event Stream</span>
+                        <button id="clearFeedBtn" class="feed-clear-btn" title="Clear Log">Clear</button>
+                    </div>
+                    <div id="activityFeedList" class="activity-feed">
+                        <div class="feed-empty">Waiting for member voice activity...</div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Voice Leaderboard -->
+                <div id="leaderboardTab" class="tab-pane hidden">
+                    <div class="feed-header">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="feed-title">Voice Leaderboard</span>
+                            <span id="leaderboardCountBadge" class="card-badge-pill" style="font-size: 0.72rem; padding: 2px 7px;">0 ranked</span>
+                        </div>
+                        <button id="refreshLeaderboardBtn" class="feed-clear-btn" title="Reload">Reload</button>
+                    </div>
+                    <div style="padding: 0 10px 8px 10px;">
+                        <input type="text" id="leaderboardSearchInput" class="filter-input" placeholder="🔍 Search member name..." style="width: 100%; box-sizing: border-box; padding: 7px 12px; font-size: 0.82rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary);">
+                    </div>
+                    <div id="leaderboardTimeframeBar" style="display: flex; gap: 6px; padding: 0 10px 10px 10px;">
+                        <button class="lb-timeframe-btn active" data-timeframe="all" style="flex: 1; padding: 5px 6px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--accent-color, #5865F2); color: #fff; cursor: pointer; transition: all 0.15s ease;">🏆 All-Time</button>
+                        <button class="lb-timeframe-btn" data-timeframe="daily" style="flex: 1; padding: 5px 6px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; transition: all 0.15s ease;">🌅 Daily</button>
+                        <button class="lb-timeframe-btn" data-timeframe="weekly" style="flex: 1; padding: 5px 6px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; transition: all 0.15s ease;">📅 Weekly</button>
+                    </div>
+                    <div id="leaderboardList" class="leaderboard-feed">
+                        <div class="feed-empty">Loading leaderboard data...</div>
+                    </div>
+                </div>
+
+                <!-- Server Info Box -->
+                <div class="server-info-card">
+                    <div class="info-row">
+                        <span class="info-label">Discord Bot Latency:</span>
+                        <span id="botLatencyValue" class="info-value">-- ms</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Counter Channels:</span>
+                        <span id="counterStatusValue" class="info-value">Checking...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Dashboard Mode:</span>
+                        <span id="dashboardModeValue" class="info-value">Public</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- Admin Authentication Modal -->
+    <div id="authModal" class="modal-overlay hidden">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Administrator Authentication
+                </h3>
+                <button id="closeModalBtn" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">
+                    Enter the configured <code>DASHBOARD_SECRET</code> from your <code>.env</code> file to gain administrative access, toggle privacy modes, or view private server dashboards.
+                </p>
+                <div class="form-group">
+                    <label for="adminSecretInput">Admin Secret Token:</label>
+                    <input type="password" id="adminSecretInput" placeholder="Paste your 32+ char secret token here..." autocomplete="current-password">
+                </div>
+                <div id="modalAuthFeedback" class="auth-feedback hidden"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelAuthBtn" class="btn btn-secondary">Cancel</button>
+                <button id="submitAuthBtn" class="btn btn-primary">Authenticate</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Member Detailed Voice Stats Modal -->
+    <div id="userStatsModal" class="modal-overlay hidden">
+        <div class="modal-container modal-lg">
+            <div class="modal-header">
+                <div class="user-modal-profile">
+                    <div class="avatar-ring-container">
+                        <img id="userStatsAvatar" class="user-modal-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
+                        <span id="userStatsLiveDot" class="live-dot hidden" title="Currently active in voice"></span>
+                    </div>
+                    <div class="user-modal-info">
+                        <h3 id="userStatsDisplayName" class="user-modal-name">Member Name</h3>
+                        <span id="userStatsStatusBadge" class="status-badge-pill">Checking...</span>
+                    </div>
+                </div>
+                <button id="closeUserStatsModalBtn" class="modal-close" title="Close">&times;</button>
+            </div>
+            <div class="modal-body user-stats-body">
+                <!-- Total Spent Banner -->
+                <div class="user-total-banner">
+                    <span class="banner-label">TOTAL TIME IN VOICE CHANNELS</span>
+                    <span id="userStatsTotalTime" class="banner-value">0h 0m 0s</span>
+                    <span class="banner-subtext">All channels combined across server history</span>
+                </div>
+
+                <!-- Three Columns / Cards: All Time, Daily, Weekly -->
+                <div class="breakdown-grid">
+                    <!-- 1. All Time Card -->
+                    <div class="breakdown-card">
+                        <div class="breakdown-card-header">
+                            <span class="breakdown-card-title">ALL TIME BREAKDOWN</span>
+                        </div>
+                        <div class="breakdown-card-content">
+                            <div class="stat-line">
+                                <span class="stat-label"><span class="dot-indicator dot-green"></span> Unmuted:</span>
+                                <span id="userAllTimeUnmuted" class="stat-val">0h 0m 0s</span>
+                            </div>
+                            <div class="stat-line">
+                                <span class="stat-label"><span class="dot-indicator dot-amber"></span> Muted:</span>
+                                <span id="userAllTimeMuted" class="stat-val">0h 0m 0s</span>
+                            </div>
+                            <div class="stat-line">
+                                <span class="stat-label"><span class="dot-indicator dot-red"></span> Deafened:</span>
+                                <span id="userAllTimeDeafened" class="stat-val">0h 0m 0s</span>
+                            </div>
+                            <div class="stat-line">
+                                <span class="stat-label"><span class="dot-indicator dot-gray"></span> AFK:</span>
+                                <span id="userAllTimeAfk" class="stat-val">0h 0m 0s</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Daily Card -->
+                    <div class="breakdown-card">
+                        <div class="breakdown-card-header">
+                            <span class="breakdown-card-title">DAILY BREAKDOWN</span>
+                            <span id="userDailyTotal" class="badge-mini">Total: 0h 0m 0s</span>
+                        </div>
+                        <div class="breakdown-card-content">
+                            <div class="stat-line">
+                                <span class="stat-label"><span class="dot-indicator dot-green"></span> Unmuted:</span>
+                                <span id="userDailyUnmuted" class="stat-val">0h 0m 0s</span>
+                            </div>
+                            <div class="stat-line">
+                                <span class="stat-label"><span class="dot-indicator dot-amber"></span> Muted:</span>
+                                <span id="userDailyMuted" class="stat-val">0h 0m 0s</span>
+                            </div>
+                            <div class="stat-line">
+                                <span class="stat-label"><span class="dot-indicator dot-red"></span> Deafened:</span>
+                                <span id="userDailyDeafened" class="stat-val">0h 0m 0s</span>
+                            </div>
+                            <div class="stat-line">
+                                <span class="stat-label"><span class="dot-indicator dot-gray"></span> AFK:</span>
+                                <span id="userDailyAfk" class="stat-val">0h 0m 0s</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Weekly Card -->
+                    <div class="breakdown-card">
+                        <div class="breakdown-card-header">
+                            <span class="breakdown-card-title">WEEKLY BREAKDOWN</span>
+                            <span id="userWeeklyTotal" class="badge-mini">Total: 0h 0m 0s</span>
+                        </div>
+                        <div class="breakdown-card-content">
+                            <div class="stat-line">
+                                <span class="stat-label"><span class="dot-indicator dot-green"></span> Unmuted:</span>
+                                <span id="userWeeklyUnmuted" class="stat-val">0h 0m 0s</span>
+                            </div>
+                            <div class="stat-line">
+                                <span class="stat-label"><span class="dot-indicator dot-amber"></span> Muted:</span>
+                                <span id="userWeeklyMuted" class="stat-val">0h 0m 0s</span>
+                            </div>
+                            <div class="stat-line">
+                                <span class="stat-label"><span class="dot-indicator dot-red"></span> Deafened:</span>
+                                <span id="userWeeklyDeafened" class="stat-val">0h 0m 0s</span>
+                            </div>
+                            <div class="stat-line">
+                                <span class="stat-label"><span class="dot-indicator dot-gray"></span> AFK:</span>
+                                <span id="userWeeklyAfk" class="stat-val">0h 0m 0s</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="user-modal-footer-note">
+                    <span class="live-pulse-dot"></span> Voice states are being updated at real time
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+        <div class="footer-container">
+            <p>Discord VC Counter Bot • Production-Ready 24/7 Voice Analytics • Protected by Discord Rate Limit Safeguards</p>
+        </div>
+    </footer>
+
+    <!-- Frontend Script -->
+    <script src="app.js"></script>
+</body>
+</html>
