@@ -49,7 +49,7 @@ class Settings(BaseModel):
     # Web Server & Host Configuration
     host: str = Field(default_factory=lambda: os.getenv("HOST", "0.0.0.0"))
     port: int = Field(
-        default_factory=lambda: int(os.getenv("PORT", "8000"))
+        default_factory=lambda: int(os.getenv("PORT") or os.getenv("SERVER_PORT") or "8000")
     )
     dashboard_url: str = Field(
         default_factory=lambda: os.getenv("DASHBOARD_URL", "http://localhost:8000")

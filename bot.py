@@ -2473,11 +2473,25 @@ async def main() -> None:
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 2, 60)
 
+    async def run_server_safe() -> None:
+        """Runs the Uvicorn web dashboard server safely without crashing the bot if port binding fails."""
+        try:
+            await server.serve()
+        except OSError as e:
+            logger.warning(
+                "⚠️ Web dashboard server could not bind to %s:%s (%s). Running in Discord-only mode.",
+                settings.host,
+                settings.port,
+                e,
+            )
+        except Exception as e:
+            logger.error("Web dashboard server encountered an error: %s", e, exc_info=True)
+
     # Run bot and web server in parallel
     try:
         await asyncio.gather(
             run_bot_resilient(token),
-            server.serve(),
+            run_server_safe(),
         )
     except discord.errors.PrivilegedIntentsRequired:
         client_id = settings.discord_client_id or "YOUR_APPLICATION_ID"
