@@ -37,12 +37,21 @@ Before uploading the bot, make sure your Discord bot application has the require
 1. Navigate to **[bot-hosting.net](https://bot-hosting.net)**.
 2. Click **Login with Discord** and authorize your account.
 3. On the main dashboard, click **Create Server**.
-4. Fill in the server details:
-   - **Server Name**: `VC-Counter` (or your preferred name)
-   - **Software / Language**: Select **Python**
-   - **Python Version**: Select **Python 3.12** (or latest Python 3.11+)
-   - **Location / Node**: Select any available free node
-   - **Memory & Disk**: Allocate available free resources (e.g. 512MB – 1024MB RAM is more than enough)
+4. **Select Runtime & Server Settings**:
+
+| Setting / Field | Exact Value to Choose | Notes |
+| :--- | :--- | :--- |
+| **Software / Language** | **Python** | ⚠️ Do NOT choose Node.js, Java, or generic |
+| **Python Version / Image** | **Python 3.12** *(Recommended)* | If 3.12 is not available, choose **Python 3.11** |
+| **Server Name** | `VC-Counter` | Any name of your choice |
+| **Location / Node** | Any available free node | E.g., Germany, US, France, etc. |
+| **Memory (RAM)** | **512 MB – 1024 MB** | 512MB is plenty for the bot + web API |
+| **Disk Space** | **1024 MB – 2048 MB** | Sufficient for dependencies and SQLite database |
+
+> [!IMPORTANT]
+> **Why Python 3.12 or 3.11?**
+> The bot runs on `discord.py` 2.x, `FastAPI`, and `Pydantic` v2, which require Python 3.10+. Python 3.12 delivers optimal asyncio performance and pre-built Linux wheels. Avoid Python 3.8 or older.
+
 5. Click **Create Server**.
 6. Once created, click on your server or click **Manage** to open the **Pterodactyl Control Panel**.
 
@@ -54,6 +63,7 @@ Before uploading the bot, make sure your Discord bot application has the require
 Your bot requires these files and folders:
 ```text
 ├── bot.py                  # Main application entry point
+├── main.py                 # Pterodactyl startup wrapper
 ├── requirements.txt        # Python dependency list
 ├── .env.example            # Environment template
 ├── api/                    # REST routes & WebSocket broadcaster
@@ -62,6 +72,10 @@ Your bot requires these files and folders:
 ├── services/               # Database, security, counters, and statistics modules
 └── tests/                  # Unit test suite
 ```
+
+> [!TIP]
+> **Pre-Packaged ZIP Ready to Upload**:
+> A clean deployment archive **`bot-hosting.zip`** (110 KB) has already been created in this folder! It contains all required files and automatically excludes `.venv`, `.git`, and `cloudflared.exe`.
 
 > [!WARNING]
 > **DO NOT upload these folders**:
@@ -74,14 +88,13 @@ Your bot requires these files and folders:
 
 ### Upload Method (ZIP & Unarchive — Recommended)
 
-1. **On your computer**:
-   - Select `bot.py`, `requirements.txt`, `.env.example`, `api`, `dashboard`, `data`, and `services`.
-   - Right-click ➔ **Send to** ➔ **Compressed (zipped) folder** (e.g. name it `bot-files.zip`).
-2. **On bot-hosting.net panel**:
-   - Click the **File Manager** (Files) tab on the left sidebar.
-   - Drag and drop `bot-files.zip` into the file manager window (or click **Upload**).
-   - Once uploaded, click the **three dots (`...`)** next to `bot-files.zip` and choose **Unarchive**.
-   - After the files extract, delete the `bot-files.zip` file to save disk space.
+1. **Upload `bot-hosting.zip`**:
+   - Locate **`bot-hosting.zip`** in your project folder.
+   - In the bot-hosting.net panel, click the **File Manager** (Files) tab on the left sidebar.
+   - Drag and drop `bot-hosting.zip` into the file manager window (or click **Upload**).
+2. **Unarchive**:
+   - Once uploaded, click the **three dots (`...`)** next to `bot-hosting.zip` and choose **Unarchive**.
+   - After the files extract, delete `bot-hosting.zip` to save disk space.
 
 ---
 
