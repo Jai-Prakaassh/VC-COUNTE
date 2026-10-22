@@ -18,6 +18,7 @@ A complete, production-ready **Discord Voice Channel Counter Bot** integrated wi
 4. [Environment Configuration](#-environment-configuration)
 5. [Installation & Local Launch](#-installation--local-launch)
 6. [24/7 VPS Deployment & Always-On Operation](#-247-vps-deployment--always-on-operation)
+   - [Free 24/7 Hosting Guide (bot-hosting.net)](README_HOSTING.md)
 7. [Nginx Reverse Proxy & HTTPS Configuration](#-nginx-reverse-proxy--https-configuration)
 8. [Discord Commands Reference](#-discord-commands-reference)
 9. [Security Defense Architecture](#-security-defense-architecture)
@@ -200,6 +201,9 @@ Once started, access the web dashboard at **`http://localhost:8000/dashboard/`**
 
 > [!IMPORTANT]
 > **Understanding 24/7 Uptime**: A systemd service or background process manager automatically recovers your bot from software crashes and reboots. However, **24/7 uninterrupted operation requires an always-on cloud hosting provider** (e.g., Hetzner, DigitalOcean, Linode, OVH, or AWS Lightsail). If your home PC goes to sleep, loses power, or loses internet, your bot will go offline.
+
+> [!TIP]
+> **Free 24/7 Bot Hosting**: If you prefer using free Pterodactyl hosting without managing a Linux VPS, follow our step-by-step guide: [**README_HOSTING.md**](README_HOSTING.md).
 
 ### Setting up on Ubuntu / Debian VPS via Systemd
 
