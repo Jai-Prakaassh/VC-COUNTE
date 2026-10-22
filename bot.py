@@ -40,6 +40,7 @@ from services.statistics import (
     build_user_stats_embed,
     compute_guild_statistics,
     determine_voice_state,
+    format_dashboard_url,
 )
 from services.counters import CounterChannelManager
 from api.routes import router as api_router, set_bot_instance
@@ -1056,11 +1057,7 @@ async def cmd_removesetup(ctx: commands.Context) -> None:
 async def cmd_dashboard(ctx: commands.Context) -> None:
     """Displays the dashboard link and privacy status."""
     guild_id = str(ctx.guild.id) if ctx.guild else None
-    url = (
-        f"{settings.dashboard_url.rstrip('/')}?guild={guild_id}"
-        if guild_id
-        else settings.dashboard_url
-    )
+    url = format_dashboard_url(settings.dashboard_url, guild_id=guild_id)
 
     is_public = False
     if guild_id:

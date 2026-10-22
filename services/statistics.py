@@ -180,6 +180,24 @@ def filter_and_sort_channels(
     return filtered
 
 
+def format_dashboard_url(
+    base_url: str,
+    guild_id: Optional[str | int] = None,
+    user_id: Optional[str | int] = None,
+) -> str:
+    """Formats a clean dashboard link directing directly to /dashboard/ with query parameters."""
+    clean = (base_url or "http://localhost:8000").rstrip("/")
+    if not clean.endswith("/dashboard"):
+        clean = f"{clean}/dashboard"
+    params = []
+    if guild_id:
+        params.append(f"guild={guild_id}")
+    if user_id:
+        params.append(f"user={user_id}")
+    query = f"?{'&'.join(params)}" if params else ""
+    return f"{clean}/{query}"
+
+
 def build_stats_embed(
     guild: discord.Guild, stats: Dict[str, Any], dashboard_url: str
 ) -> discord.Embed:
@@ -236,7 +254,7 @@ def build_stats_embed(
             inline=False,
         )
 
-    guild_dash_url = f"{dashboard_url.rstrip('/')}?guild={guild.id}"
+    guild_dash_url = format_dashboard_url(dashboard_url, guild_id=guild.id)
     embed.add_field(
         name="🌐 Live Web Dashboard",
         value=f"[Open Real-Time Dashboard]({guild_dash_url})",
@@ -327,7 +345,7 @@ def build_user_stats_embed(
             inline=False,
         )
 
-    guild_dash_url = f"{dashboard_url.rstrip('/')}?guild={guild.id}&user={member.id}"
+    guild_dash_url = format_dashboard_url(dashboard_url, guild_id=guild.id, user_id=member.id)
     embed.add_field(
         name="🌐 View on Web Dashboard",
         value=f"[Open Real-Time Stats]({guild_dash_url})",

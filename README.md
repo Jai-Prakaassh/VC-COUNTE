@@ -539,7 +539,7 @@ Updates the bot's Discord activity presence:
 
 #### 7. `/dashboard` or `,dashboard` — Web Dashboard Link
 Sends the public or private URL to access the web dashboard:
-- Direct clickable link: `https://usb-academic-governmental-musician.trycloudflare.com/?guild=<YOUR_GUILD_ID>`
+- Direct clickable link: `https://<YOUR_DASHBOARD_URL>/dashboard/?guild=<YOUR_GUILD_ID>`
 
 #### 8. Leaderboard Commands — `,lb` & `/leaderboard`
 Interactive multi-timeframe voice activity ranking:

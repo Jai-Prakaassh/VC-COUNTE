@@ -87,9 +87,11 @@ class GuildConfigUpdate(BaseModel):
 # Health & Root Routes
 # ------------------------------------------------------------------------------
 @router.get("/")
-async def root_redirect():
-    """Redirects base path to the web dashboard UI."""
-    return RedirectResponse(url="/dashboard/", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
+async def root_redirect(request: Request):
+    """Redirects base path to the web dashboard UI while preserving query parameters."""
+    query = request.url.query
+    target_url = f"/dashboard/?{query}" if query else "/dashboard/"
+    return RedirectResponse(url=target_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
 
 @router.get("/health")

@@ -52,7 +52,7 @@ class Settings(BaseModel):
         default_factory=lambda: int(os.getenv("PORT", "8000"))
     )
     dashboard_url: str = Field(
-        default_factory=lambda: os.getenv("DASHBOARD_URL", "https://usb-academic-governmental-musician.trycloudflare.com")
+        default_factory=lambda: os.getenv("DASHBOARD_URL", "http://localhost:8000")
     )
 
     # Security & Dashboard Access
