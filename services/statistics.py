@@ -309,7 +309,7 @@ def build_user_stats_embed(
     name = member.display_name
 
     embed = discord.Embed(
-        title=f"{mic_emoji}  ** @{name} Voice Stats**",
+        title=f"{mic_emoji}  **@{name} Voice Stats**",
         color=discord.Color.from_rgb(88, 101, 242),
         timestamp=discord.utils.utcnow(),
     )
@@ -317,7 +317,7 @@ def build_user_stats_embed(
         embed.set_thumbnail(url=member.display_avatar.url)
 
     desc = (
-        f"**  <@{member.id}> ** spent a total of {all_time['total_formatted']} in voice channels!\n\n"
+        f"**<@{member.id}>** spent a total of **{all_time['total_formatted']}** in voice channels!\n\n"
         f"**All Time Breakdown:**\n"
         f"{red_arrow} ・Unmuted: {all_time['unmuted_formatted']}\n"
         f"{red_arrow} ・Muted: {all_time['muted_formatted']}\n"

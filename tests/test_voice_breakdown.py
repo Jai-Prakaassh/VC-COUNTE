@@ -130,7 +130,7 @@ def test_build_user_stats_embed():
 
     assert "<:mic:1562509315192131644>" in embed.title
     assert "TestUser Voice Stats" in embed.title
-    assert "**  <@67890> ** spent a total of 0h 0m 3s in voice channels!" in embed.description
+    assert "**<@67890>** spent a total of **0h 0m 3s** in voice channels!" in embed.description
     assert "<:red_arrow:1562507531853762631> ・Unmuted: 0h 0m 3s" in embed.description
     assert "・AFK:" not in embed.description
     assert "All Time Breakdown:" in embed.description

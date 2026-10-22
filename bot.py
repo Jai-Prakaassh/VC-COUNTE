@@ -1200,23 +1200,23 @@ class LeaderboardView(discord.ui.View):
             is_highlighted = bool(self.highlight_user_id and str(entry["user_id"]) == str(self.highlight_user_id))
             indicator = "👉 " if is_highlighted else ""
             user_mention = f"<@{entry['user_id']}>" if entry.get("user_id") else entry.get('display_name', 'Unknown')
-            lines.append(f"{indicator}{medal} **{user_mention} — {time_str}**")
+            lines.append(f"{indicator}**{medal} {user_mention} — {time_str}**")
 
         # Pinned user position section so everyone can see themselves even outside Top 10
         user_id_str = str(self.requester.id)
         user_entry = next((u for u in self.all_members if str(u["user_id"]) == user_id_str), None)
-        pos_header = "📌 Position:" if (self.highlight_user_id and str(self.highlight_user_id) == user_id_str) else "📌 Your Position:"
+        pos_header = "Position:" if (self.highlight_user_id and str(self.highlight_user_id) == user_id_str) else "Your Position:"
         if user_entry:
             u_rank = user_entry["rank"]
             u_time_str = self._format_time(user_entry["total_seconds"])
             user_section = (
                 f"\n─────────────────────────────\n"
-                f"{pos_header} ** #{u_rank}  <@{self.requester.id}> — {u_time_str} **"
+                f"📌 **{pos_header} #{u_rank} <@{self.requester.id}> — {u_time_str}**"
             )
         else:
             user_section = (
                 f"\n─────────────────────────────\n"
-                f"{pos_header} ** Unranked ** (Join a voice channel to get on this leaderboard!)"
+                f"📌 **{pos_header} Unranked** (Join a voice channel to get on this leaderboard!)"
             )
 
         embed.description = "\n".join(lines) + user_section
